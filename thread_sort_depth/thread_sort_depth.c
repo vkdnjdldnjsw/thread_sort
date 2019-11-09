@@ -51,7 +51,7 @@ int do_sort(void *_arg){
     info->is_done = true;
 }
 
-void thread_sort_under(void *_arg){
+int thread_sort_under(void *_arg){
     struct thread_sort_info *info = (struct thread_sort_info *)_arg;
     struct list_head my_list;
     INIT_LIST_HEAD(&my_list);
@@ -60,7 +60,7 @@ void thread_sort_under(void *_arg){
     for(cur = info->head->next; cur->next != info->head; cur = cur->next){
         count++;
     }
-    if(head->next != info->head){
+    if(info->head->next != info->head){
         count++;
     }
 
@@ -101,17 +101,18 @@ void thread_sort_under(void *_arg){
         }
         thread_infos[i].head = &list_heads[i];
         thread_infos[i].is_done = false;
-        thread_infos[i].cmp = cmp;
-        thread_infos[i].priv = priv;
-        if(depth == 1) {
+        thread_infos[i].cmp = info->cmp;
+		thread_infos[i].depth = info->depth-1;
+        thread_infos[i].priv = info->priv;
+        if(info->depth == 0) {
             kthread_run(&do_sort, (void *)&thread_infos[i], "sort_thread");
         }
         else {
-            kthread_run(&thread_sort_depth, (void *)&thread_infos[i], "sort_under");
+            kthread_run(&thread_sort_under, (void *)&thread_infos[i], "sort_under");
         }
     }
-    head->next = head;
-    head->prev = head;
+    info->head->next = info->head;
+    info->head->prev = info->head;
     for( i = 0; i< 2; i++){
         while(!thread_infos[i].is_done){
             schedule();
@@ -174,11 +175,11 @@ void thread_sort_depth(void *priv, struct list_head *head,int (*cmp)(void *priv,
         thread_infos[i].cmp = cmp;
         thread_infos[i].priv = priv;
         thread_infos[i].depth = depth - 1;
-        if(depth == 1) {
+        if(depth == 0) {
             kthread_run(&do_sort, (void *)&thread_infos[i], "sort_thread");
         }
         else {
-            kthread_run(&thread_sort_depth, (void *)&thread_infos[i], "sort_under");
+            kthread_run(&thread_sort_under, (void *)&thread_infos[i], "sort_under");
         }
     }
     head->next = head;

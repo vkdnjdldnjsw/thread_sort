@@ -61,7 +61,7 @@ void struct_process(int item_n, int depth){
     getnstimeofday(&t1);
     printk("list_sort with n items takes %u secs %u nsecs\n", t1.tv_sec - t0.tv_sec, t1.tv_nsec - t0.tv_nsec);
     getnstimeofday(&t0);
-    thread_sort(NULL, &list2, cmp, depth);
+    thread_sort_depth(NULL, &list2, cmp, depth);
     getnstimeofday(&t1);
     printk("our_sort with n items takes %u secs %u nsecs\n", t1.tv_sec - t0.tv_sec, t1.tv_nsec - t0.tv_nsec);
     //printAll(&list1);
