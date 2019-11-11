@@ -7,6 +7,8 @@
 #include<linux/kthread.h>
 
 
+void thread_sort_depth(void *priv, struct list_head *head, int (*cmp)(void *priv, struct list_head *a, struct list_head *b), int depth);
+
 void merge(void *priv,int (*cmp)(void *priv, struct list_head *a, struct list_head *b),struct list_head *head, struct list_head *a, struct list_head *b){
     struct list_head *tail = head;
     struct list_head *head_a = a;
@@ -47,7 +49,11 @@ struct thread_sort_info{
 };
 int do_sort(void *_arg){
     struct thread_sort_info *info = (struct thread_sort_info *)_arg;
-    list_sort(info->priv, info->head, info->cmp);
+	if (info->depth <= 1) {
+    	list_sort(info->priv, info->head, info->cmp);
+	} else {
+		thread_sort_depth(info->priv, info->head, info->cmp, info->depth);
+	}
     info->is_done = true;
 }
 
@@ -63,51 +69,37 @@ void thread_sort_depth(void *priv, struct list_head *head,int (*cmp)(void *priv,
         count++;
     }
 
-    struct list_head *list_heads = kmalloc(sizeof(struct list_head) * 2 * depth, GFP_KERNEL);
-    struct thread_sort_info *thread_infos = kmalloc(sizeof(struct thread_sort_info) * 2 * depth, GFP_KERNEL);
+    struct list_head *list_heads = kmalloc(sizeof(struct list_head) * 2, GFP_KERNEL);
+    struct thread_sort_info *thread_infos = kmalloc(sizeof(struct thread_sort_info) * 2, GFP_KERNEL);
 
     int sliceNum = count / 2;
     int left = count % 2;
-    int i, j;
+    int i;
+	int j = 0;
     cur = head;
     struct list_head *first = cur->next;
-    for(i = 0; i < 2; i++){
-        list_heads[i].next = first;
-        first->prev = &list_heads[i];
-        if(i == 1){
-            list_heads[i].prev = head->prev;
-            head->prev->next = &list_heads[i];
-        } else{
-            for(j = 0; j < sliceNum; j++){
-                if(cur == NULL){
-                    cur = first;
-                } else{
-                    cur = cur->next;
-                }
-            }
-            if(left > 0){
-                if(cur == NULL){
-                    cur = first;
-                } else{
-                    cur = cur->next;
-                }
-                left--;
-            }
-            first = cur->next;
-            cur->next = &list_heads[i];
-            list_heads[i].prev = cur;
-            cur = NULL;
-        }
+    struct list_head *last = cur->prev;
+    struct list_head *middle;
+    list_heads[0].next = first;
+    first->prev = &list_heads[0];
+    list_heads[1].prev = last;
+    last->next = &list_heads[1];
+    cur = first;
+    for(i = 1; i < count/2; i++) {
+        cur = cur->next;
+    }
+    middle = cur->next;
+    list_heads[0].prev = cur;
+    cur->next = &list_heads[0];
+    list_heads[1].next = middle;
+    middle->prev = &list_heads[1];
+    for(i = 0; i < 2; i++) {
         thread_infos[i].head = &list_heads[i];
         thread_infos[i].is_done = false;
         thread_infos[i].cmp = cmp;
+		thread_infos[i].depth = depth-1;
         thread_infos[i].priv = priv;
-        if(depth == 1) {
-            kthread_run(&do_sort, (void *)&thread_infos[i], "sort_thread");
-        }
-        else {
-			thread_sort_depth(priv, thread_infos[i].head, cmp, depth - 1);
-        }
+        kthread_run(&do_sort, (void *)&thread_infos[i], "sort_thread");
     }
     head->next = head;
     head->prev = head;
@@ -115,8 +107,9 @@ void thread_sort_depth(void *priv, struct list_head *head,int (*cmp)(void *priv,
         while(!thread_infos[i].is_done){
             schedule();
         }
-        merge(priv,cmp, head, head, thread_infos[i].head);
+		thread_infos[i].is_done = true;
     }
+	merge(priv, cmp, head, &list_heads[0], &list_heads[1]);
     kfree(thread_infos);
     kfree(list_heads);
 }
