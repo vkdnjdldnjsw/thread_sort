@@ -6,7 +6,7 @@
 #include<linux/random.h>
 #include<linux/list_sort.h>
 
-extern void thread_sort_depth(void *priv, struct list_head *head,int (*cmp)(void *priv, struct list_head *a, struct list_head *b), int depth);
+extern void thread_sort_depth(void *priv, struct list_head *head,int (*cmp)(void *priv, struct list_head *a, struct list_head *b), int depth, int count);
 
 struct my_node{
     struct list_head list;
