@@ -1,4 +1,4 @@
-obj-m := sort_compare.o thread_sort.o
+obj-m := sort_compare.o thread_sort.o thread_sort_depth.o
 
 KERNEL_DIR := /lib/modules/$(shell uname -r)/build
 PWD := $(shell pwd)

@@ -7,6 +7,7 @@
 #include<linux/list_sort.h>
 
 extern void thread_sort(void *priv, struct list_head *head,int (*cmp)(void *priv, struct list_head *a, struct list_head *b), int num_of_thread);
+exter void thread_sort_depth(void *priv, struct list_head *head, int (*cmp)(void *priv, struct list_head *a, struct list_head *b), int depth, int count);
 
 struct my_node{
     struct list_head list;
@@ -41,20 +42,25 @@ void freeAll(struct list_head *my_list){
     }
 }
 
-void struct_process(int item_n, int thread_num){
+void struct_process(int item_n, int thread_num, int depth){
     struct list_head list1;
     struct list_head list2;
+	struct list_head list3;
     INIT_LIST_HEAD(&list1);
     INIT_LIST_HEAD(&list2);
+	INIT_LIST_HEAD(&list3);
     int i;
     struct timespec t0, t1;
     for(i = 0; i<item_n; i++){
         struct my_node *new1 = kmalloc(sizeof(struct my_node), GFP_KERNEL);
         struct my_node *new2 = kmalloc(sizeof(struct my_node), GFP_KERNEL);
-        new1->data = prandom_u32() % item_n;
+        struct my_node *new3 = kmalloc(sizeof(struct my_node), GFP_KERNEL);
+		new1->data = prandom_u32() % item_n;
         new2->data = new1->data;
+		new3->data = new2->data;
         list_add(&new1->list, &list1);
         list_add(&new2->list, &list2);
+		list_add(&new3->list, &list3);
     }
     getnstimeofday(&t0);
     list_sort(NULL, &list1, cmp);
@@ -64,14 +70,19 @@ void struct_process(int item_n, int thread_num){
     thread_sort(NULL, &list2, cmp, thread_num);
     getnstimeofday(&t1);
     printk("our_sort with n items takes %u secs %u nsecs\n", t1.tv_sec - t0.tv_sec, t1.tv_nsec - t0.tv_nsec);
-    //printAll(&list1);
+    getnstimeofday(&t0);
+	thread_sort_depth(NULL, &list3, cmp, depth, item_n);
+	getnstimeofday(&t1);
+	printk("our_sort_depth with n items takes %u secs %u nsecs.\n", t1.tv_sec - t0.tv_sec, t1.tv_nsec - t0.tv_nsec);
+	
+	//printAll(&list1);
     //printAll(&list2);
     freeAll(&list1);
     freeAll(&list2);
 }
 
 int __init my_link_init(void){
-    struct_process(1000000,3);
+    struct_process(1000000,3,2);
     return 0;
 }
 
