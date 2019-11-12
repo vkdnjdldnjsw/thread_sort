@@ -7,7 +7,7 @@
 #include<linux/kthread.h>
 
 
-void thread_sort_depth(void *priv, struct list_head *head, int (*cmp)(void *priv, struct list_head *a, struct list_head *b), int depth);
+void thread_sort_depth(void *priv, struct list_head *head, int (*cmp)(void *priv, struct list_head *a, struct list_head *b), int depth, int count);
 
 void merge(void *priv,int (*cmp)(void *priv, struct list_head *a, struct list_head *b),struct list_head *head, struct list_head *a, struct list_head *b){
     struct list_head *tail = head;
@@ -57,23 +57,14 @@ int do_sort(void *_arg){
     info->is_done = true;
 }
 
-void thread_sort_depth(void *priv, struct list_head *head,int (*cmp)(void *priv, struct list_head *a, struct list_head *b), int depth){
+void thread_sort_depth(void *priv, struct list_head *head,int (*cmp)(void *priv, struct list_head *a, struct list_head *b), int depth, int count){
     struct list_head my_list;
     INIT_LIST_HEAD(&my_list);
     struct list_head *cur;
-    int count = 0;
-    for(cur = head->next; cur->next != head; cur = cur->next){
-        count++;
-    }
-    if(head->next != head){
-        count++;
-    }
 
     struct list_head *list_heads = kmalloc(sizeof(struct list_head) * 2, GFP_KERNEL);
     struct thread_sort_info *thread_infos = kmalloc(sizeof(struct thread_sort_info) * 2, GFP_KERNEL);
 
-    int sliceNum = count / 2;
-    int left = count % 2;
     int i;
 	int j = 0;
     cur = head;
