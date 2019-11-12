@@ -45,6 +45,7 @@ struct thread_sort_info{
     struct list_head *head;
     int (*cmp)(void *priv, struct list_head *a, struct list_head *b);
     int depth;
+	int count;
     void *priv;
 };
 int do_sort(void *_arg){
@@ -52,7 +53,7 @@ int do_sort(void *_arg){
 	if (info->depth <= 1) {
     	list_sort(info->priv, info->head, info->cmp);
 	} else {
-		thread_sort_depth(info->priv, info->head, info->cmp, info->depth);
+		thread_sort_depth(info->priv, info->head, info->cmp, info->depth, info->count);
 	}
     info->is_done = true;
 }
@@ -89,6 +90,7 @@ void thread_sort_depth(void *priv, struct list_head *head,int (*cmp)(void *priv,
         thread_infos[i].is_done = false;
         thread_infos[i].cmp = cmp;
 		thread_infos[i].depth = depth-1;
+		thread_infos[i].count = count / 2;
         thread_infos[i].priv = priv;
         kthread_run(&do_sort, (void *)&thread_infos[i], "sort_thread");
     }
