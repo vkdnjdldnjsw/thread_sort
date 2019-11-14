@@ -44,67 +44,52 @@ void freeAll(struct list_head *my_list){
 
 void struct_process(int item_n, int thread_num, int depth){
     struct list_head list1;
-    struct list_head list2[8];
-    struct list_head list3[3];
-    int i, j;
-    
+    struct list_head list2;
+	struct list_head list3;
     INIT_LIST_HEAD(&list1);
-    for(i = 0; i < thread_num; i++){
-    	INIT_LIST_HEAD(&list2[i]);
-    }
-    for(i = 0; i < thread_num; i++){
-    	INIT_LIST_HEAD(&list3[i]);
-    }
+    INIT_LIST_HEAD(&list2);
+	INIT_LIST_HEAD(&list3);
+    int i;
     struct timespec t0, t1;
     for(i = 0; i<item_n; i++){
         struct my_node *new1 = kmalloc(sizeof(struct my_node), GFP_KERNEL);
+        struct my_node *new2 = kmalloc(sizeof(struct my_node), GFP_KERNEL);
+        struct my_node *new3 = kmalloc(sizeof(struct my_node), GFP_KERNEL);
 	new1->data = prandom_u32() % item_n;
+        new2->data = new1->data;
+	new3->data = new2->data;
         list_add(&new1->list, &list1);
-	for(j = 0; j < thread_num; j++){
-        	struct my_node *new2 = kmalloc(sizeof(struct my_node), GFP_KERNEL);
-        	new2->data = new1->data;
-        	list_add(&new2->list, &list2[j]);
-	}
-	for(j = 0; j < depth; j++){
-        	struct my_node *new3 = kmalloc(sizeof(struct my_node), GFP_KERNEL);
-        	new3->data = new1->data;
-        	list_add(&new3->list, &list3[j]);
-	}
+        list_add(&new2->list, &list2);
+	list_add(&new3->list, &list3);
     }
-    printk("%d",item_n);
+    printk("number of node : %d!\n",item_n);
     getnstimeofday(&t0);
     list_sort(NULL, &list1, cmp);
     getnstimeofday(&t1);
-    printk("%u.%9u", t1.tv_sec - t0.tv_sec, t1.tv_nsec - t0.tv_nsec);
+    printk("%u.%u", t1.tv_sec - t0.tv_sec, t1.tv_nsec - t0.tv_nsec);
    
     for(i = 1; i <= thread_num; i++){
     	getnstimeofday(&t0);
-    	thread_sort(NULL, &list2[i-1], cmp, i);
+    	thread_sort(NULL, &list2, cmp, thread_num);
     	getnstimeofday(&t1);
-    	printk("%u.%9u", t1.tv_sec - t0.tv_sec, t1.tv_nsec - t0.tv_nsec);
+    	printk("%u.%u", t1.tv_sec - t0.tv_sec, t1.tv_nsec - t0.tv_nsec);
     }
 
     for(i = 1; i <= depth; i++){
     	getnstimeofday(&t0);
-    	thread_sort_depth(NULL, &list3[i-1], cmp, i, item_n);
+    	thread_sort_depth(NULL, &list3, cmp, depth, item_n);
     	getnstimeofday(&t1);
-    	printk("%u.%9u", t1.tv_sec - t0.tv_sec, t1.tv_nsec - t0.tv_nsec);
+    	printk("%u.%u", t1.tv_sec - t0.tv_sec, t1.tv_nsec - t0.tv_nsec);
     }
     printk("!");
+	//printAll(&list1);
+    //printAll(&list2);
     freeAll(&list1);
-    for(i = 1; i <= thread_num; i++){
-    	freeAll(&list2[i-1]);
-    }
-    for(i = 1; i <= depth; i++){
-    	freeAll(&list3[i-1]);
-    }
+    freeAll(&list2);
 }
 
 int __init my_link_init(void){
-    int i;
-    for(i = 1000000; i <=1000000; i += 1000){
-    	struct_process(i,8,3);
-    }
+    struct_process(1000000,8,3);
     return 0;
 }
 
