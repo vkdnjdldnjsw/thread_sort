@@ -9,6 +9,7 @@ echo "insult done"
 dmesg > dmesg.txt
 
 echo "dmesg copy doen"
+gcc parsing.c -o parsing.o
 ./parsing.o
 
 echo "parsing done"
