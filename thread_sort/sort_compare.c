@@ -75,20 +75,20 @@ void struct_process(int item_n, int thread_num, int depth){
     getnstimeofday(&t0);
     list_sort(NULL, &list1, cmp);
     getnstimeofday(&t1);
-    printk("%u.%9u", t1.tv_sec - t0.tv_sec, t1.tv_nsec - t0.tv_nsec);
+    printk("%u.%8u", t1.tv_sec - t0.tv_sec, t1.tv_nsec - t0.tv_nsec);
    
     for(i = 1; i <= thread_num; i++){
     	getnstimeofday(&t0);
     	thread_sort(NULL, &list2[i-1], cmp, i);
     	getnstimeofday(&t1);
-    	printk("%u.%9u", t1.tv_sec - t0.tv_sec, t1.tv_nsec - t0.tv_nsec);
+    	printk("%u.%8u", t1.tv_sec - t0.tv_sec, t1.tv_nsec - t0.tv_nsec);
     }
 
     for(i = 1; i <= depth; i++){
     	getnstimeofday(&t0);
     	thread_sort_depth(NULL, &list3[i-1], cmp, i, item_n);
     	getnstimeofday(&t1);
-    	printk("%u.%9u", t1.tv_sec - t0.tv_sec, t1.tv_nsec - t0.tv_nsec);
+    	printk("%u.%8u", t1.tv_sec - t0.tv_sec, t1.tv_nsec - t0.tv_nsec);
     }
     printk("!");
     freeAll(&list1);
@@ -102,8 +102,10 @@ void struct_process(int item_n, int thread_num, int depth){
 
 int __init my_link_init(void){
     int i;
-    for(i = 1000000; i <=1000000; i += 1000){
-    	struct_process(i,8,3);
+    int repeat_count = 30;
+    int node_num = 1000000;
+    for(i = 0; i < repeat_count; i ++){
+    	struct_process(node_num,8,3);
     }
     return 0;
 }
