@@ -51,8 +51,10 @@ struct thread_sort_info{
 int do_sort(void *_arg){
     struct thread_sort_info *info = (struct thread_sort_info *)_arg;
 	if (info->depth <= 1) {
+		/* sort each piece with list_sort() */
     	list_sort(info->priv, info->head, info->cmp);
 	} else {
+		/* if the program doesn't reach to the depth we want yet, call thread_sort_depth() recursively. */
 		thread_sort_depth(info->priv, info->head, info->cmp, info->depth, info->count);
 	}
     info->is_done = true;
@@ -72,6 +74,9 @@ void thread_sort_depth(void *priv, struct list_head *head,int (*cmp)(void *priv,
     struct list_head *first = cur->next;
     struct list_head *last = cur->prev;
     struct list_head *middle;
+	/* From HERE to line 92, split given list to 2 pieces.
+	 * Then to line 99, save head and depth informations in thread_infos.
+	 * After saving informations, 2 kthreads for do_sort() will be created. */
     list_heads[0].next = first;
     first->prev = &list_heads[0];
     list_heads[1].prev = last;
@@ -94,14 +99,18 @@ void thread_sort_depth(void *priv, struct list_head *head,int (*cmp)(void *priv,
         thread_infos[i].priv = priv;
         kthread_run(&do_sort, (void *)&thread_infos[i], "sort_thread");
     }
+
     head->next = head;
     head->prev = head;
     for( i = 0; i< 2; i++){
         while(!thread_infos[i].is_done){
+		    /* Wait till each thread ends their sort. */
             schedule();
         }
+		/* Set each threads END. */
 		thread_infos[i].is_done = true;
     }
+	/* Merge sorted pieces. */
 	merge(priv, cmp, head, &list_heads[0], &list_heads[1]);
     kfree(thread_infos);
     kfree(list_heads);
