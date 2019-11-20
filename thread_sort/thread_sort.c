@@ -70,6 +70,8 @@ void thread_sort(void *priv, struct list_head *head,int (*cmp)(void *priv, struc
     int i, j;
     cur = head;
     struct list_head *first = cur->next;
+    
+    //Divide the linked list data into n pieces.
     for(i = 0; i < num_of_thread; i++){
         list_heads[i].next = first;
         first->prev = &list_heads[i];
@@ -101,14 +103,19 @@ void thread_sort(void *priv, struct list_head *head,int (*cmp)(void *priv, struc
         thread_infos[i].is_done = false;
         thread_infos[i].cmp = cmp;
         thread_infos[i].priv = priv;
+        
+        //Sort each linked list separately with thread.
         kthread_run(&do_sort, (void *)&thread_infos[i], "sort_thread");
     }
     head->next = head;
     head->prev = head;
     for( i = 0; i< num_of_thread; i++){
+        //Wait the sort.
         while(!thread_infos[i].is_done){
             schedule();
         }
+        
+        // merge the sorted lineked list.
         merge(priv,cmp, head, head, thread_infos[i].head);
     }
     kfree(thread_infos);
